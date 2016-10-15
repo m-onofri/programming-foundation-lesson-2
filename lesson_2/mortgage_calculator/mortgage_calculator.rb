@@ -1,59 +1,38 @@
-# Methods
-
-def prompt(message)
-  puts "=>> #{message}"
+def prompt(string)
+  puts "=>> #{string}"
 end
 
-def ask_name
-  prompt "Please, enter your name:"
-  user_name = ""
-  loop do
-    user_name = gets.chomp
-    if user_name.empty?
-      puts "You must enter a valid name:"
-    else
-      break
-    end
-  end
-  user_name
-end
-
-def float? string
+def float?(string)
   /\d/.match(string) && /^\d*\.?\d*$/.match(string)
 end
 
-def integer? string
+def integer?(string)
   /^\d+$/.match(string)
 end
 
-def valid_number? string
+def valid_number?(string)
   float?(string) || integer?(string)
 end
 
-def ask_info info, request
-  prompt request
+# info must be a string (es. "loan amount")
+def ask_info(info)
   value = ''
   loop do
     value = gets.chomp
-    if valid_number? value
-      if value.to_f > 0
-        break
-      else
-        puts "The #{info} can't be zero or lower. Please, enter a valid #{info}:"
-      end
+    if (valid_number? value) && (value.to_f > 0)
+      break
     else
-      puts "The #{info} is not valid. Enter a valid #{info}:"
+      prompt "The #{info} is not valid. Enter a valid #{info}:"
     end
   end
   value
 end
 
-def set_duration_unit
-  prompt "Will you be entering the duration of your loan in months or years? (months/years)")
+def ask_duration_unit
   duration_unit = ''
   loop do
     duration_unit = gets.chomp
-    if duration_unit.downcase == "years" || duration_unit.downcase == "months"
+    if duration_unit == "years" || duration_unit == "months"
       break
     else
       puts "You must choose between years or months. Please enter your choice:"
@@ -62,11 +41,11 @@ def set_duration_unit
   duration_unit
 end
 
-def correct_answer 
+def validate_answer
   answer = ''
   loop do
     answer = gets.chomp
-    if answer.downcase == "yes" || answer.downcase == "no"
+    if answer == "yes" || answer == "no"
       break
     else
       puts "Your answer is not correct; please enter yes or no:"
@@ -75,92 +54,91 @@ def correct_answer
   answer
 end
 
-def loan_amount_format string
+def from_float_to_array(string)
+  custom = {}
   if string.include?(".")
-    positive = string.split(".")[0].split(//)
-    negative = string.split(".")[1]
+    custom[:positive] = string.split(".")[0].split(//)
+    custom[:negative] = string.split(".")[1]
   else
-    positive = string.split(//)
-    negative = ''
+    custom[:positive] = string.split(//)
+    custom[:negative] = ''
   end
-  output_array = [] 
-  i = 1
-  while !positive.empty?
-    if i % 4 == 0
-      output_array.unshift(",")
-      i = 1
-    else
-      output_array.unshift(positive.last)
-      positive.pop
-      i += 1
-    end
-  end
-  result = output_array.join + "." + negative
+  custom
 end
 
-# Program
-puts "Welcome to the Mortgage Calculator!"
+def add_commas(array, i = 1, output_array = [])
+  until array.empty?
+    if (i % 4).zero?
+      output_array.unshift(",")
+    else
+      output_array.unshift(array.last)
+      array.pop
+    end
+    i += 1
+  end
+  output_array
+end
 
-user_name = ask_name
+def loan_amount_format(string)
+  custom = from_float_to_array string
+  output_array = add_commas custom[:positive]
+  output_array.join + "." + custom[:negative]
+end
 
-puts "Hi #{user_name}. To calculate your montly payment, we need to know some information."
-
-loop do 
+prompt "Welcome to the Mortgage Calculator!"
+prompt "To calculate your montly payment, we need to know some information."
+puts
+loop do
   loan_amount   = ''
   interest_rate = ''
   duration_unit = ''
   duration_loan = ''
 
-  loop do 
-    loan_amount = ask_info "loan amount", "Please enter your loan amount (in euro):"
-    interest_rate = ask_info "interest rate", "Please enter your interest rate (example: 2.5 for 2.5%)"
-    duration_unit = set_duration_unit
-    duration_loan = ask_info "loan duration", "Please enter your loan duration, in number of #{duration_unit}:"
-
-    puts "Loan amount: #{loan_amount_format(format('%02.2f', loan_amount))}€\ninterest rate: #{format('%02.2f', interest_rate)}%\nLoan duration: #{format('%02.1f', duration_loan)} #{duration_unit}"
-    puts "Do you confirm these information? (yes/no)"
-    answer1 = correct_answer
-    if answer1 == "yes"
-      break
-    end
+  loop do
+    prompt "Please enter your loan amount in euro (example: 100.55):"
+    loan_amount = ask_info "loan amount"
+    puts
+    prompt "Please enter your interest rate (example: 2.5 for 2.5%):"
+    interest_rate = ask_info "interest rate"
+    puts
+    prompt "Will you be entering the duration of your loan " \
+           "in months or years? (months/years)"
+    duration_unit = ask_duration_unit
+    puts
+    prompt "Enter your loan duration, in number of #{duration_unit}:"
+    duration_loan = ask_info "loan duration"
+    puts
+    puts "Loan amount: ".ljust(20) +
+         "#{loan_amount_format(format('%02.2f', loan_amount))}€".rjust(20)
+    puts "Interest rate: ".ljust(20) +
+         "#{format('%02.2f', interest_rate)}%".rjust(20)
+    puts "Loan duration:".ljust(20) +
+         "#{format('%02.1f', duration_loan)} #{duration_unit}".rjust(20)
+    puts
+    prompt "Do you confirm these information? (yes/no)"
+    answer1 = validate_answer
+    break if answer1 == "yes"
   end # End inner loop
 
   interest_per_month = interest_rate.to_f / 100 / 12
 
-  if duration_unit == "years"
-    total_months = duration_loan.to_f * 12
-  else
-    total_months = duration_loan.to_f
-  end
+  total_months = if duration_unit == "years"
+                   duration_loan.to_f * 12
+                 else
+                   duration_loan.to_f
+                 end
 
-  montly_payment = loan_amount.to_f * (interest_per_month / (1 - (1 + interest_per_month)**-total_months))
-
-  puts "Your monthly payment is: #{format('%02.2f', montly_payment)}€"
-
-  puts "Would you like to perform another calculation? (yes/no)"
-  answer2 = correct_answer
-  if answer2 == "no"
-    break
-  end
+  montly_payment = loan_amount.to_f *
+                   (interest_per_month /
+                   (1 - (1 + interest_per_month)**-total_months))
+  puts
+  puts "MONTLY PAYMENT:".ljust(20) +
+       "#{format('%02.2f', montly_payment)}€".rjust(20)
+  puts
+  prompt "Would you like to perform another calculation? (yes/no)"
+  answer2 = validate_answer
+  break if answer2 == "no"
 end # End outer loop
-
-puts "Thank you #{user_name} for using the Mortgage Calculator!"
-puts "Good bye!"
-
-#Refactor the resume part
-#Eliminate the user_name part?
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
+puts
+prompt "Thank you for using the Mortgage Calculator!"
+prompt "Good bye!"
