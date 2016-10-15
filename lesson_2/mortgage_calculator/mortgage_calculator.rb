@@ -54,7 +54,8 @@ def validate_answer
   answer
 end
 
-def from_float_to_array(string)
+# for '23.55' returns {:positive => ['2', '3'], :negative => ['5', '5']}
+def split_float(string)
   custom = {}
   if string.include?(".")
     custom[:positive] = string.split(".")[0].split(//)
@@ -66,21 +67,23 @@ def from_float_to_array(string)
   custom
 end
 
-def add_commas(array, i = 1, output_array = [])
-  until array.empty?
-    if (i % 4).zero?
-      output_array.unshift(",")
+# for ['1', '0', '0', '0'] the method returns ['1', ',', '0', '0', '0']
+def add_commas(array, i = 1)
+  output_array = []
+  until i > array.length
+    if (i % 3).zero?
+      output_array.unshift("," + array[array.length - i])
     else
-      output_array.unshift(array.last)
-      array.pop
+      output_array.unshift(array[array.length - i])
     end
     i += 1
   end
   output_array
 end
 
-def loan_amount_format(string)
-  custom = from_float_to_array string
+# Add commas to a float number (for "1000.55" the method returns "1,000.55")
+def float_format(string)
+  custom = split_float string
   output_array = add_commas custom[:positive]
   output_array.join + "." + custom[:negative]
 end
@@ -109,7 +112,7 @@ loop do
     duration_loan = ask_info "loan duration"
     puts
     puts "Loan amount: ".ljust(20) +
-         "#{loan_amount_format(format('%02.2f', loan_amount))}€".rjust(20)
+         "#{float_format(format('%02.2f', loan_amount))}€".rjust(20)
     puts "Interest rate: ".ljust(20) +
          "#{format('%02.2f', interest_rate)}%".rjust(20)
     puts "Loan duration:".ljust(20) +
@@ -118,27 +121,25 @@ loop do
     prompt "Do you confirm these information? (yes/no)"
     answer1 = validate_answer
     break if answer1 == "yes"
-  end # End inner loop
+  end
 
   interest_per_month = interest_rate.to_f / 100 / 12
-
   total_months = if duration_unit == "years"
                    duration_loan.to_f * 12
                  else
                    duration_loan.to_f
                  end
-
   montly_payment = loan_amount.to_f *
                    (interest_per_month /
                    (1 - (1 + interest_per_month)**-total_months))
   puts
   puts "MONTLY PAYMENT:".ljust(20) +
-       "#{format('%02.2f', montly_payment)}€".rjust(20)
+       "#{float_format(format('%02.2f', montly_payment))}€".rjust(20)
   puts
   prompt "Would you like to perform another calculation? (yes/no)"
   answer2 = validate_answer
   break if answer2 == "no"
-end # End outer loop
+end
 puts
 prompt "Thank you for using the Mortgage Calculator!"
 prompt "Good bye!"
