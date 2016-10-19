@@ -3,7 +3,7 @@ def prompt(string)
 end
 
 def float?(string)
-  /\d/.match(string) && /^\d*\.?\d*$/.match(string)
+  /^\d*\.?\d+$/.match(string)
 end
 
 def integer?(string)
@@ -19,11 +19,8 @@ def ask_info(info)
   value = ''
   loop do
     value = gets.chomp
-    if (valid_number? value) && (value.to_f > 0)
-      break
-    else
-      prompt "The #{info} is not valid. Enter a valid #{info}:"
-    end
+    break if (valid_number? value) && (value.to_f > 0)
+    prompt "The #{info} is not valid. Enter a valid #{info}:"
   end
   value
 end
@@ -32,11 +29,8 @@ def ask_duration_unit
   duration_unit = ''
   loop do
     duration_unit = gets.chomp
-    if duration_unit == "years" || duration_unit == "months"
-      break
-    else
-      puts "You must choose between years or months. Please enter your choice:"
-    end
+    break if duration_unit == "years" || duration_unit == "months"
+    puts "You must choose between years or months. Please enter your choice:"
   end
   duration_unit
 end
@@ -45,24 +39,21 @@ def validate_answer
   answer = ''
   loop do
     answer = gets.chomp
-    if answer == "yes" || answer == "no"
-      break
-    else
-      puts "Your answer is not correct; please enter yes or no:"
-    end
+    break if answer == "yes" || answer == "no"
+    puts "Your answer is not correct; please enter yes or no:"
   end
   answer
 end
 
-# for '23.55' returns {:positive => ['2', '3'], :negative => ['5', '5']}
+# for '23.55' returns {:integer_part => ['2', '3'], :decimal_part => ['5', '5']}
 def split_float(string)
   custom = {}
   if string.include?(".")
-    custom[:positive] = string.split(".")[0].split(//)
-    custom[:negative] = string.split(".")[1]
+    custom[:integer_part] = string.split(".")[0].split(//)
+    custom[:decimal_part] = string.split(".")[1]
   else
-    custom[:positive] = string.split(//)
-    custom[:negative] = ''
+    custom[:integer_part] = string.split(//)
+    custom[:decimal_part] = ''
   end
   custom
 end
@@ -84,8 +75,8 @@ end
 # Add commas to a float number (for "1000.55" the method returns "1,000.55")
 def float_format(string)
   custom = split_float string
-  output_array = add_commas custom[:positive]
-  output_array.join + "." + custom[:negative]
+  output_array = add_commas custom[:integer_part]
+  output_array.join + "." + custom[:decimal_part]
 end
 
 prompt "Welcome to the Mortgage Calculator!"
@@ -98,19 +89,20 @@ loop do
   duration_loan = ''
 
   loop do
+    system 'clear'
     prompt "Please enter your loan amount in euro (example: 100.55):"
     loan_amount = ask_info "loan amount"
-    puts
+    system 'clear'
     prompt "Please enter your interest rate (example: 2.5 for 2.5%):"
     interest_rate = ask_info "interest rate"
-    puts
+    system 'clear'
     prompt "Will you be entering the duration of your loan " \
            "in months or years? (months/years)"
     duration_unit = ask_duration_unit
-    puts
+    system 'clear'
     prompt "Enter your loan duration, in number of #{duration_unit}:"
     duration_loan = ask_info "loan duration"
-    puts
+    system 'clear'
     puts "Loan amount: ".ljust(20) +
          "#{float_format(format('%02.2f', loan_amount))}€".rjust(20)
     puts "Interest rate: ".ljust(20) +
