@@ -4,8 +4,6 @@ VALID_CHOICES = { "r" => "ROCK",
                   "k" => "SPOCK",
                   "l" => "LIZARD" }
 
-TIE_COMBINATIONS = %w(rr pp ss kk ll)
-
 WINNING_COMBINATIONS = { "rl" => "Rock crush Lizard!",
                          "lk" => "Lizard poisons Spock!",
                          "ks" => "Spock smashes Scissors!",
@@ -22,11 +20,11 @@ def valid_choice?(choice)
 end
 
 def win?(combination)
-  WINNING_COMBINATIONS.keys.include?(combination)
+  WINNING_COMBINATIONS.keys.include?(combination.downcase)
 end
 
-def tie?(combination)
-  TIE_COMBINATIONS.include?(combination)
+def tie?(user, computer)
+  user == computer
 end
 
 def integer?(string)
@@ -42,7 +40,7 @@ def ask_user_name
   prompt "Before starting the game, enter your name:"
   loop do
     user_name = gets.chomp
-    break unless user_name == ''
+    break if user_name =~ /^[A-Za-z]+$/
     prompt "Please enter a valid name:"
   end
   user_name
@@ -70,28 +68,28 @@ def ask_choice
   choice
 end
 
-def validate_answer
+def validate_yes_no_answer
   answer = ''
   loop do
-    answer = gets.chomp
-    break if answer == "yes" || answer == "no"
+    answer = gets.chomp.downcase
+    break if answer.start_with?('y', 'n')
     puts "Your answer is not correct; please enter yes or no:"
   end
   answer
 end
 
 def display_result(user, computer)
-  combination = user + computer
+  combination = user.downcase + computer.downcase
   if win?(combination)
     puts WINNING_COMBINATIONS[combination] + " You won!"
-  elsif tie?(combination)
+  elsif tie?(user, computer)
     puts "It's a tie!"
   else
     puts WINNING_COMBINATIONS[combination.reverse] + " Computer won!"
   end
 end
 
-def display_content(title, user, computer, user_name = "User")
+def display_players_data(title, user, computer, user_name = "User")
   puts
   puts title.center(30)
   puts "#{user_name}:".ljust(15) + " #{user}".rjust(15)
@@ -99,7 +97,7 @@ def display_content(title, user, computer, user_name = "User")
   puts
 end
 
-def display_continue_request(request)
+def prompt_to_continue(request)
   prompt request
   gets.chomp
   system 'clear'
@@ -109,7 +107,7 @@ def increment_score(user, computer, score)
   combination = user + computer
   if win?(combination)
     score["User"] += 1
-  elsif !tie?(combination) && !win?(combination)
+  elsif !tie?(user, computer) && !win?(combination)
     score["Computer"] += 1
   end
 end
@@ -126,8 +124,8 @@ end
 def display_game_winner(game_score, max_points, user_name)
   system 'clear'
   puts game_winner(game_score, max_points, user_name)
-  display_content("Final score", game_score["User"],
-                  game_score["Computer"], user_name)
+  display_players_data("Final score", game_score["User"],
+                       game_score["Computer"], user_name)
 end
 
 system 'clear'
@@ -153,31 +151,31 @@ puts <<-EOF
 user_name = ask_user_name
 max_points = ask_max_points
 
-display_continue_request "Press enter to start the game"
+prompt_to_continue "Press enter to start the game"
 loop do
   game_score = { "User" => 0, "Computer" => 0 }
 
   loop do
-    user_choice = ask_choice
-    computer_choice = VALID_CHOICES.keys.sample
+    user_choice = ask_choice.downcase
+    computer_choice = VALID_CHOICES.keys.sample.downcase
 
     increment_score(user_choice, computer_choice, game_score)
 
-    display_content("Choices", VALID_CHOICES[user_choice],
-                    VALID_CHOICES[computer_choice], user_name)
+    display_players_data("Choices", VALID_CHOICES[user_choice],
+                         VALID_CHOICES[computer_choice], user_name)
     display_result(user_choice, computer_choice)
-    display_content("Score (max points = #{max_points})",
-                    game_score["User"],
-                    game_score["Computer"], user_name)
+    display_players_data("Score (max points = #{max_points})",
+                         game_score["User"],
+                         game_score["Computer"], user_name)
 
-    display_continue_request "Press enter to continue the game"
+    prompt_to_continue "Press enter to continue the game"
     break if game_score.values.include?(max_points.to_i)
   end
   display_game_winner(game_score, max_points, user_name)
 
   prompt "Do you want to play one more time?"
-  answer = validate_answer
-  break if answer == "no"
+  answer = validate_yes_no_answer
+  break if answer.start_with?('n')
 end
 
 prompt "Thank you for playing, #{user_name}. Good bye!"
