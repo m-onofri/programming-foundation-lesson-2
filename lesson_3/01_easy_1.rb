@@ -129,15 +129,72 @@ p how_deep
 
 # If we take advantage of Ruby's Kernel#eval method to have it
 # execute this string as if it were a "recursive" method call
+# eval()
 
-eval(how_deep)
+result = eval(how_deep)
+
+puts result
 
 # what will be the result?
 
+# The result will be 42
+
+#######################################################################
+
+# Question n° 8
+
+# If we build an array like this:
+
+flintstones = ["Fred", "Wilma"]
+flintstones << ["Barney", "Betty"]
+flintstones << ["BamBam", "Pebbles"]
+
+# We will end up with this "nested" array:
+
+["Fred", "Wilma", ["Barney", "Betty"], ["BamBam", "Pebbles"]]
+
+# Make this into an un-nested array.
+
+p flintstones
+
+flintstones.flatten!
+
+p flintstones
+
+######################################################################
+
+# Question n° 9
+
+# Given the hash below
+
+flintstones = { "Fred" => 0, "Wilma" => 1, "Barney" => 2, "Betty" => 3, "BamBam" => 4, "Pebbles" => 5 }
+
+# Turn this into an array containing only two elements: 
+# Barney's name and Barney's number
+
+selection = flintstones.assoc("Barney")
+
+p selection
+
+######################################################################
+
+# Question n° 10
+
+# Given the array below
+
+flintstones = ["Fred", "Barney", "Wilma", "Betty", "Pebbles", "BamBam"]
+
+# Turn this array into a hash where the names are 
+# the keys and the values are the positions in the array.
 
 
+flintstones_hash = {}
 
+flintstones.each_with_index do |item, index|
+  flintstones_hash[item] = index
+end
 
+p flintstones_hash
 
 
 
