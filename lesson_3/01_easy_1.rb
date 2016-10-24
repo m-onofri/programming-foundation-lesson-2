@@ -196,6 +196,9 @@ end
 
 p flintstones_hash
 
+# NB: the method each_with_index() included in the module Enumerable
+# that is accessible by array objects
+
 
 
 
