@@ -126,11 +126,8 @@ def uuid_maker
 end
 
 def uuid_maker_alt
-  strings_container = []
-  [8, 4, 4, 4, 12].map do |num|
-    partial_string = ''
-    num.times { partial_string << rand(16).to_s(16) }
-    strings_container << partial_string
+  strings_container = [8, 4, 4, 4, 12].map do |num|
+    Array.new(num) { rand(16).to_s(16) }.join
   end
   strings_container.join('-')
 end

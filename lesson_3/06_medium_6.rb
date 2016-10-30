@@ -227,3 +227,31 @@ tricky_method_two(my_string, my_array)
 puts "My string looks like this now: #{my_string}"
 puts "My array looks like this now: #{my_array}"
 
+# In this case inside the method the string is mutated usign the operator <<, 
+# while the variable containing the reference to the passed array is simply
+# riassigned to another array, with a different object_id.
+
+###############################################################################
+
+# Question n° 5
+
+# How could the unnecessary duplication in this method be removed?
+
+def color_valid(color)
+  if color == "blue" || color == "green"
+    true
+  else
+    false
+  end
+end
+
+def color_valid(color)
+  color == "blue" || color == "green" 
+end
+
+# Ruby automatically evaluate statements, returning true if the statement is true,
+# otherwise returning false
+
+
+
+
