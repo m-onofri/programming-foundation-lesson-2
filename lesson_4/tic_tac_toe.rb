@@ -135,9 +135,9 @@ def computer_smart_move(brd, marker_checked)
 end
 
 def computer_smart_choice(brd)
-  offensive_move = computer_smart_move(brd, "O")
+  offensive_move = computer_smart_move(brd, COMPUTER_MARKER)
   return offensive_move unless offensive_move.nil?
-  defensive_move = computer_smart_move(brd, "X")
+  defensive_move = computer_smart_move(brd, USER_MARKER)
   return defensive_move unless defensive_move.nil?
   return 5 if brd[5] == EMPTY_SQUARE
   available_squares(brd).sample
