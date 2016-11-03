@@ -12,31 +12,6 @@ def prompt(message)
   puts "=> #{message}"
 end
 
-# rubocop:disable Metrics/AbcSize
-def display_board(brd)
-  puts ""
-  puts " 1   |2    |3    "
-  puts "  #{brd[1]}  |  #{brd[2]}  |  #{brd[3]}  "
-  puts "     |     |     "
-  puts "-----+-----+-----"
-  puts " 4   |5    |6    "
-  puts "  #{brd[4]}  |  #{brd[5]}  |  #{brd[6]}  "
-  puts "     |     |     "
-  puts "-----+-----+-----"
-  puts " 7   |8    |9    "
-  puts "  #{brd[7]}  |  #{brd[8]}  |  #{brd[9]}  "
-  puts "     |     |     "
-  puts ""
-end
-# rubocop:enable Metrics/AbcSize
-
-def joinor(array, sep = ", ", last_sep = " or ")
-  last_item = array.pop.to_s
-  final_str = array.join(sep)
-  array.length == 0 ? final_str << last_item : final_str << last_sep + last_item
-  final_str
-end
-
 def integer?(string)
   /^\d+$/.match(string)
 end
@@ -52,7 +27,8 @@ def ask_user_name
   user_name
 end
 
-def ask_max_points(max_points = 5)
+def ask_max_points
+  max_points = nil
   prompt "Please enter how many points players have to reach to win the game:"
   loop do
     max_points = gets.chomp
@@ -62,10 +38,115 @@ def ask_max_points(max_points = 5)
   max_points
 end
 
+def coin_toss_result
+  coin_toss_result = ["h", "t"].sample
+  return "heads" if coin_toss_result == "h"
+  return "tails" if coin_toss_result == "t"
+end
+
+def valid_coin_toss_choice
+  prompt "Now, we have to decide who will start the game. (h)eads or (t)ails?"
+  # user_choice = ''
+  loop do
+    case gets.chomp.downcase
+    when "heads", "h" then return "heads"
+    when "tails", "t" then return "tails"
+    else prompt "Please enter (h)eads or (t)ails"
+    end
+    # user_choice = gets.chomp.downcase
+    # break if user_choice == "h" || user_choice == "t"
+    # prompt "Please choose (h)eads or (t)ails."
+  end
+  # user_choice
+end
+
+def set_starting_player
+  coin_toss = coin_toss_result
+  user_choice = valid_coin_toss_choice
+  prompt "You choose #{user_choice}"
+  if user_choice == coin_toss
+    prompt "The coin toss result is #{coin_toss}."
+    prompt "You will start the game."
+    return "user"
+  else
+    prompt "The coin toss results is #{coin_toss}."
+    prompt "Computer will start the game."
+    return "computer"
+  end
+end
+
+def prompt_to_continue(request)
+  prompt request
+  gets.chomp
+  clear_screen
+end
+
 def initialize_board
   new_board = {}
   (1..9).each { |num| new_board[num] = EMPTY_SQUARE }
   new_board
+end
+
+# rubocop:disable Metrics/AbcSize
+def display_board(brd)
+  puts ""
+  puts " 1   |2    |3    ".center(50)
+  puts "  #{brd[1]}  |  #{brd[2]}  |  #{brd[3]}  ".center(50)
+  puts "     |     |     ".center(50)
+  puts "-----+-----+-----".center(50)
+  puts " 4   |5    |6    ".center(50)
+  puts "  #{brd[4]}  |  #{brd[5]}  |  #{brd[6]}  ".center(50)
+  puts "     |     |     ".center(50)
+  puts "-----+-----+-----".center(50)
+  puts " 7   |8    |9    ".center(50)
+  puts "  #{brd[7]}  |  #{brd[8]}  |  #{brd[9]}  ".center(50)
+  puts "     |     |     ".center(50)
+  puts ""
+end
+# rubocop:enable Metrics/AbcSize
+
+def display_game_score(game_score, user_name, max_points)
+  user_score = "#{user_name} (X):".ljust(15) + game_score[:user].to_s.rjust(15)
+  comp_score = "Computer (O):".ljust(15) + game_score[:computer].to_s.rjust(15)
+  puts "Game score (max points = #{max_points})".center(50)
+  puts user_score.center(50)
+  puts comp_score.center(50)
+  puts ""
+end
+
+def show_game_situation(brd, game_score, username, max_points)
+  display_board(brd)
+  display_game_score(game_score, username, max_points)
+end
+
+def joinor(array, sep = ", ", last_sep = " or ")
+  last_item = array.pop.to_s
+  final_str = array.join(sep)
+  array.empty? ? final_str << last_item : final_str << last_sep + last_item
+  final_str
+end
+
+def available_squares(brd)
+  brd.keys.select { |square| brd[square] == EMPTY_SQUARE }
+end
+
+def computer_move(brd, marker_checked)
+  WINNING_ROWS.each do |value|
+    next unless brd.values_at(*value).count(marker_checked) == 2
+    value.each do |square|
+      return square if brd[square] == EMPTY_SQUARE
+    end
+  end
+  nil
+end
+
+def computer_smart_choice(brd)
+  offensive_move = computer_move(brd, "O")
+  return offensive_move unless offensive_move.nil?
+  defensive_move = computer_move(brd, "X")
+  return defensive_move unless defensive_move.nil?
+  return 5 if brd[5] == EMPTY_SQUARE
+  available_squares(brd).sample
 end
 
 def update_board!(brd, square, player)
@@ -74,14 +155,6 @@ def update_board!(brd, square, player)
   elsif player == "computer"
     brd[square] = COMPUTER_MARKER
   end
-end
-
-def available_squares(brd)
-  brd.keys.select { |square| brd[square] == EMPTY_SQUARE }
-end
-
-def board_full?(brd)
-  available_squares(brd).empty?
 end
 
 def valid_choice?(choice, brd)
@@ -98,16 +171,39 @@ def ask_choice(brd)
   user_choice
 end
 
+def current_player_move!(brd, current_player)
+  if current_player == "user"
+    user_choice = ask_choice(brd)
+    update_board!(brd, user_choice, "user")
+  elsif current_player == "computer"
+    computer_choice = computer_smart_choice(brd)
+    update_board!(brd, computer_choice, "computer")
+  end
+end
+
+def board_full?(brd)
+  available_squares(brd).empty?
+end
+
+def someone_won?(brd)
+  !!the_winner_is(brd)
+end
+
+def alternate_player(current_player)
+  current_player == "user" ? "computer" : "user"
+end
+
+def increment_score!(game_score, brd)
+  game_score[:user] += 1 if the_winner_is(brd) == "user"
+  game_score[:computer] += 1 if the_winner_is(brd) == "computer"
+end
+
 def the_winner_is(brd)
   WINNING_ROWS.each do |value|
     return 'user' if value.all? { |square| brd[square] == USER_MARKER }
     return 'computer' if value.all? { |square| brd[square] == COMPUTER_MARKER }
   end
   nil
-end
-
-def someone_won?(brd)
-  !!the_winner_is(brd)
 end
 
 def prompt_result_declaration(brd, user_name)
@@ -122,39 +218,17 @@ def prompt_result_declaration(brd, user_name)
   end
 end
 
-def display_game_score(game_score, user_name, max_points)
-  puts "Game score (max points = #{max_points})"
-  puts "#{user_name} (X):     #{game_score[:user]}"
-  puts "Computer (O):     #{game_score[:computer]}"
-  puts ""
-end
-
-def show_game_situation(brd, game_score, username, max_points)
-  display_board(brd)
-  display_game_score(game_score, username, max_points)
-end
-
-def final_game_winner(game_score, user_name, max_points)
+def prompt_final_game_winner(game_score, user_name, max_points)
   winner = game_score.key(max_points.to_i)
   if winner == :user
-    ("#{user_name.upcase} WON!").center(15)
+    puts "#{user_name.upcase} WON!".center(50)
   else
-    ("COMPUTER WON!").center(15)
+    puts "COMPUTER WON!".center(50)
   end
 end
 
-def increment_score(game_score, brd)
-  game_score[:user] += 1 if the_winner_is(brd) == "user"
-  game_score[:computer] += 1 if the_winner_is(brd) == "computer"
-end
-
-def prompt_to_continue(request)
-  prompt request
-  gets.chomp
-  clear_screen
-end
-
 def play_again?
+  puts ''
   prompt "Do you want to play again? (yes/no)"
   loop do
     case gets.chomp.downcase
@@ -165,33 +239,35 @@ def play_again?
   end
 end
 
+clear_screen
+prompt "Welcome to the Tic Tac Toe game!"
 user_name = ask_user_name
 loop do
   max_points = ask_max_points
+  starting_player = set_starting_player
   game_score = { user: 0, computer: 0 }
+  prompt_to_continue "Press enter to continue the game"
   loop do
     board = initialize_board
+    current_player = starting_player
     loop do
       clear_screen
       show_game_situation(board, game_score, user_name, max_points)
-
-      user_choice = ask_choice(board)
-      update_board!(board, user_choice, "user")
+      current_player_move!(board, current_player)
+      current_player = alternate_player(current_player)
       break if someone_won?(board) || board_full?(board)
-
-      computer_choice = available_squares(board).sample
-      update_board!(board, computer_choice, "computer")
-      break if someone_won?(board)
     end
     clear_screen
-    increment_score(game_score, board)
+    increment_score!(game_score, board)
     show_game_situation(board, game_score, user_name, max_points)
     prompt_result_declaration(board, user_name)
+    starting_player = alternate_player(starting_player)
     prompt_to_continue "Press enter to continue the game"
     break if game_score.values.include?(max_points.to_i)
   end
   display_game_score(game_score, user_name, max_points)
-  puts final_game_winner(game_score, user_name, max_points)
+  prompt_final_game_winner(game_score, user_name, max_points)
+
   break unless play_again?
 end
 prompt "Thanks for playing Tic Tac Toe. Goodbye!"
