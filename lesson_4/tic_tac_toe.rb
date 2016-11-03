@@ -45,25 +45,21 @@ def coin_toss_result
 end
 
 def valid_coin_toss_choice
-  prompt "Now, we have to decide who will start the game. (h)eads or (t)ails?"
-  # user_choice = ''
+  prompt "To choose who will start the game, we toss a coin:" \
+         " (h)eads or (t)ails?"
   loop do
     case gets.chomp.downcase
     when "heads", "h" then return "heads"
     when "tails", "t" then return "tails"
-    else prompt "Please enter (h)eads or (t)ails"
+    else prompt "Please enter (h)eads or (t)ails."
     end
-    # user_choice = gets.chomp.downcase
-    # break if user_choice == "h" || user_choice == "t"
-    # prompt "Please choose (h)eads or (t)ails."
   end
-  # user_choice
 end
 
 def set_starting_player
   coin_toss = coin_toss_result
   user_choice = valid_coin_toss_choice
-  prompt "You choose #{user_choice}"
+  prompt "You choose #{user_choice}."
   if user_choice == coin_toss
     prompt "The coin toss result is #{coin_toss}."
     prompt "You will start the game."
