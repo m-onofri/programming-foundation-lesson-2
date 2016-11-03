@@ -32,7 +32,7 @@ def ask_max_points
   prompt "Please enter how many points players have to reach to win the game:"
   loop do
     max_points = gets.chomp
-    break if integer?(max_points) && max_points.to_i > 0
+    break if integer?(max_points) && max_points.to_i.positive?
     prompt "Please enter a valid number of points:"
   end
   max_points
@@ -126,30 +126,27 @@ def available_squares(brd)
   brd.keys.select { |square| brd[square] == EMPTY_SQUARE }
 end
 
-def computer_move(brd, marker_checked)
+def computer_smart_move(brd, marker_checked)
   WINNING_ROWS.each do |value|
     next unless brd.values_at(*value).count(marker_checked) == 2
-    value.each do |square|
-      return square if brd[square] == EMPTY_SQUARE
-    end
+    value.each { |square| return square if brd[square] == EMPTY_SQUARE }
   end
   nil
 end
 
 def computer_smart_choice(brd)
-  offensive_move = computer_move(brd, "O")
+  offensive_move = computer_smart_move(brd, "O")
   return offensive_move unless offensive_move.nil?
-  defensive_move = computer_move(brd, "X")
+  defensive_move = computer_smart_move(brd, "X")
   return defensive_move unless defensive_move.nil?
   return 5 if brd[5] == EMPTY_SQUARE
   available_squares(brd).sample
 end
 
 def update_board!(brd, square, player)
-  if player == "user"
-    brd[square] = USER_MARKER
-  elsif player == "computer"
-    brd[square] = COMPUTER_MARKER
+  case player
+  when "user" then brd[square] = USER_MARKER
+  when "computer" then brd[square] = COMPUTER_MARKER
   end
 end
 
@@ -236,29 +233,36 @@ def play_again?
 end
 
 clear_screen
+
 prompt "Welcome to the Tic Tac Toe game!"
 user_name = ask_user_name
 loop do
+  game_score = { user: 0, computer: 0 }
   max_points = ask_max_points
   starting_player = set_starting_player
-  game_score = { user: 0, computer: 0 }
+
   prompt_to_continue "Press enter to continue the game"
   loop do
     board = initialize_board
     current_player = starting_player
     loop do
       clear_screen
+
       show_game_situation(board, game_score, user_name, max_points)
       current_player_move!(board, current_player)
       current_player = alternate_player(current_player)
+
       break if someone_won?(board) || board_full?(board)
     end
     clear_screen
+
     increment_score!(game_score, board)
     show_game_situation(board, game_score, user_name, max_points)
     prompt_result_declaration(board, user_name)
     starting_player = alternate_player(starting_player)
+
     prompt_to_continue "Press enter to continue the game"
+
     break if game_score.values.include?(max_points.to_i)
   end
   display_game_score(game_score, user_name, max_points)
@@ -266,4 +270,5 @@ loop do
 
   break unless play_again?
 end
+
 prompt "Thanks for playing Tic Tac Toe. Goodbye!"
