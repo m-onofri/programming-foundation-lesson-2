@@ -15,3 +15,21 @@ If all the nine squares of the board are marked, and none of the player get a th
 10. If no... goodbye!
 
 
+Tweny-one is a game very similar to blackjack, but much simpler.
+There are two players: a dealer and a player. In our case the dealer is always the computer and the player is the user.
+Both the player receive two cards: the player can see his two cards, but only one of the dealer's card.
+Players can make two different kinds of moves: "hit" or "stay". When they call a hit, the get a new card, and its value will be added to the other cards of the player. The goal is to reach a sum equal to 21 or as much closer as possible to 21, but not greater than 21.
+Player always starts, and when he calls "stay", it's the dealer's turn.
+When it's the dealer's turn, first the hidden card is uncovered, and it is added to the other card. Then, according to the value reached by the two cards, the dealer can "hit" or "stay", trying to get a final value as much closer as possible to 21, greater than the value reached by the player but at the same time, lower than 21.
+
+1. Initialize deck
+2. Deal cards to player and dealer
+3. Player turn: hit or stay
+    repeat until burst or stay
+4. If player bursts, dealer wins
+5. Dealer turn: hit or stay
+    repeat until total >= 17
+6. If dealer bursts, player wins
+7. Compare cards and declare the winner
+
+
