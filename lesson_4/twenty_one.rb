@@ -1,4 +1,5 @@
-SUITS = %w(hearts diamonds clubs spades).freeze
+# spades, hearts, diamonds, clubs
+SUITS_SYMBOLS = %W(\u2660 \u2661 \u2662 \u2663).freeze
 
 def prompt(message)
   puts "=> #{message}"
@@ -10,40 +11,43 @@ end
 
 def initialize_deck
   new_deck = {}
-  SUITS.each do |suit|
-    new_deck[suit] = %w(2 3 4 5 6 7 8 9 10 jack queen king ace)
+  SUITS_SYMBOLS.each do |suit|
+    new_deck[suit] = %w(2 3 4 5 6 7 8 9 10 J Q K A)
   end
   new_deck
 end
 
-def choosing_card(deck)
+def dealing_cards!(player, deck, players_cards)
   current_suit = nil
   loop do
-    current_suit = SUITS.sample
+    current_suit = SUITS_SYMBOLS.sample
     break unless current_suit.nil?
   end
   current_value = deck[current_suit].sample
   current_card = [current_suit, current_value]
-end
-
-def removing_card!(deck, selected_card)
-  deck[selected_card[0]].delete(selected_card[1])
-end
-
-def dealing_cards!(player, deck, players_cards) 
-  current_card = choosing_card(deck)
-  removing_card!(deck, current_card)
+  deck[current_suit].delete(current_value)
   players_cards[player] << current_card
 end
 
-def single_card_format(suit, value)
-  card = ["   --------- ", "  |         |", "  |  #{value}  |", "  |         |"] + 
-         ["  |         |", "  |#{suit} |", "  |         |", "   --------- "]
+def formatting_single_card(suit, value)
+  ["   --------- ", "  |         |", "  |    #{suit}    |"] +
+    ["  |   #{value}   |", "  |    #{suit}    |", "  |         |"] +
+    ["   --------- "]
 end
 
-def adding_card_format!(cards, new_card)
-  cards.each_with_index do |line, index|
+def formatting_cards_player!(cards, new_card)
+  cards.each_with_index do |_, index|
     cards[index] += "    " + new_card[index]
+  end
+end
+
+def formatting_card_details!(card_details)
+  card_details.each do |val|
+    case val
+    when "2".."9" then card_details[1] = " #{val} "
+    when "10" then card_details[1] = "#{val} "
+    when "A", "J", "K", "Q" then card_details[1] = " #{val} "
+    end
   end
 end
 
@@ -51,80 +55,65 @@ def display_cards(cards)
   cards.each { |line| puts line }
 end
 
-def formatting_card_details!(card_details)
-  card_details.each do |val|
-    case val
-    when "hearts", "spades" then card_details[0] = " #{val} "
-    when "diamonds" then card_details[0] = "#{val}"  
-    when "clubs" then card_details[0] = "  #{val} "
-    when "2".."9" then card_details[1] = "  #{val}  "
-    when "10" then card_details[1] = "  #{val} " 
-    when "ace" then card_details[1] = " #{val} "
-    when "jack", "king" then card_details[1] = "#{val} "
-    when "queen" then card_details[1] = "#{val}"
-    end
-  end
-end
-
 def initialize_two_cards(players_cards, player)
   player_cards = players_cards[player]
   card_1_details = formatting_card_details!(player_cards[0])
   card_2_details = formatting_card_details!(player_cards[1])
 
-  cards = single_card_format(card_1_details[0], card_1_details[1])
-  new_card = single_card_format(card_2_details[0], card_2_details[1])
+  cards = formatting_single_card(card_1_details[0], card_1_details[1])
+  new_card = formatting_single_card(card_2_details[0], card_2_details[1])
 
-  adding_card_format!(cards, new_card)
+  formatting_cards_player!(cards, new_card)
   cards
 end
 
 def initialize_one_card(players_cards, player)
   player_cards = players_cards[player]
   card_1_details = formatting_card_details!(player_cards[0])
-  card_2_details = formatting_card_details!(player_cards[1])
 
-  cards = single_card_format(card_1_details[0], card_1_details[1])
-  hidden_card = ["   --------- ", "  |         |", "  | HIDDEN  |", "  |         |"] +
-                ["  |         |", "  |  CARD   |", "  |         |", "   --------- "]
+  cards = formatting_single_card(card_1_details[0], card_1_details[1])
+  hidden_card = ["   --------- ", "  |         |"] +
+                ["  | HIDDEN  |", "  |         |"] +
+                ["  |         |", "  |  CARD   |", "   --------- "]
 
-  adding_card_format!(cards, hidden_card)
+  formatting_cards_player!(cards, hidden_card)
   cards
 end
 
-def add_new_card!(player, cards_format, players_cards)
+def add_new_card_on_screen!(player, cards_format, players_cards)
   new_card = players_cards[player].last
   new_card_details = formatting_card_details!(new_card)
 
-  new_card = single_card_format(new_card_details[0], new_card_details[1])
+  new_card = formatting_single_card(new_card_details[0], new_card_details[1])
 
-  adding_card_format!(cards_format, new_card)
+  formatting_cards_player!(cards_format, new_card)
 end
 
-def card_value(card, total_cards_value, player)
+def single_card_value(card)
   case card[1].strip
-  when "2".."10" then return card[1].to_i
-  when "jack", "queen", "king" then return 10
-  when "ace" then return 11
+  when "2".."10" then card[1].to_i
+  when "J", "Q", "K" then 10
+  when "A" then 11
   end
 end
 
-def sum_cards_value!(player, total_cards_value, players_cards)
+def total_cards_value!(player, total_cards_value, players_cards)
   total_cards_value[player] = 0
   players_cards[player].each do |card|
-    total_cards_value[player] += card_value(card, total_cards_value, player)
+    total_cards_value[player] += single_card_value(card)
   end
-  players_cards[player].select { |value| value[1].strip == "ace"}.count.times do
+  players_cards[player].select { |val| val[1].strip == "A" }.count.times do
     total_cards_value[player] -= 10 if total_cards_value[player] > 21
   end
 end
 
 def ask_user_move
-  prompt "Do you want to (h)it or to (s)tay?"
+  prompt "Would you like to (h)it or (s)tay?"
   loop do
     case gets.chomp.downcase
     when "h", "hit" then return "hit"
     when "s", "stay" then return "stay"
-    else puts "Enter a valid action: (h)it or (s)tay?"
+    else puts "Enter a valid action: (h)it or (s)tay"
     end
   end
 end
@@ -135,10 +124,6 @@ end
 
 def stay?(move)
   move == "stay"
-end
-
-def manage_player_hit!(player, deck, players_cards)
-  dealing_cards!(player, deck, players_cards)
 end
 
 def dealer_choice(total_cards_values)
@@ -180,23 +165,21 @@ def display_players_card(user_cards, dealer_cards, total_cards_value)
   puts "USER'S CARD".center(34)
   display_cards(user_cards)
   puts "Current points user: #{total_cards_value[:user]}"
-  puts ""
   puts "=" * 34
   puts "DEALER'S CARD".center(34)
   display_cards(dealer_cards)
   puts "Current points dealer: #{total_cards_value[:dealer]}"
-  puts ""
   puts "=" * 34
 end
 
 def initialize_score!(total_cards_value, players_cards)
-  sum_cards_value!(:user, total_cards_value, players_cards)
-  total_cards_value[:dealer] = card_value(players_cards[:dealer][0], total_cards_value, :dealer)
+  total_cards_value!(:user, total_cards_value, players_cards)
+  total_cards_value[:dealer] = single_card_value(players_cards[:dealer][0])
 end
 
-def managing_hit_move!(deck, players_cards, cards, player)
-  manage_player_hit!(player, deck, players_cards)
-  add_new_card!(player, cards, players_cards)
+def hit_move!(deck, players_cards, cards, player)
+  dealing_cards!(player, deck, players_cards)
+  add_new_card_on_screen!(player, cards, players_cards)
 end
 
 def prompt_to_continue(request)
@@ -204,20 +187,31 @@ def prompt_to_continue(request)
   gets.chomp
 end
 
-loop do
-  deck = initialize_deck 
-  players_cards = { user: [], dealer: [] }
-  total_cards_value = {user: 0, dealer: 0}
-  user_move = ''
-  dealer_move = ''
-
+def initialize_game(deck, players_cards, total_cards_value)
   first_two_cards!(deck, players_cards)
-
   user_cards = initialize_two_cards(players_cards, :user)
   dealer_cards = initialize_one_card(players_cards, :dealer)
+  initialize_score!(total_cards_value, players_cards)
+  return user_cards, dealer_cards
+end
 
-  initialize_score!(total_cards_value, players_cards) 
+def prompt_burst(winner, user_cards, dealer_cards, total_cards_value)
+  display_players_card(user_cards, dealer_cards, total_cards_value)
+  if winner == "user"
+    prompt "Wow, the dealer burst! You won!"
+  elsif winner == "dealer"
+    prompt "Oh no, you burst! The dealer won!"
+  end  
+end
 
+loop do
+  deck = initialize_deck
+  players_cards = { user: [], dealer: [] }
+  total_cards_value = { user: 0, dealer: 0 }
+  user_move = ''
+  dealer_move = ''
+  user_cards, dealer_cards = initialize_game(deck, players_cards,
+                                              total_cards_value)
   loop do
     display_players_card(user_cards, dealer_cards, total_cards_value)
     prompt "Your current point is #{total_cards_value[:user]}."
@@ -225,8 +219,8 @@ loop do
     prompt "You choose to #{user_move}!"
 
     if user_move == "hit"
-      managing_hit_move!(deck, players_cards, user_cards, :user)
-      sum_cards_value!(:user, total_cards_value, players_cards)
+      hit_move!(deck, players_cards, user_cards, :user)
+      total_cards_value!(:user, total_cards_value, players_cards)
     end
 
     prompt_to_continue("Press enter to continue the game")
@@ -235,7 +229,7 @@ loop do
 
   if user_move == "stay"
     dealer_cards = initialize_two_cards(players_cards, :dealer)
-    total_cards_value[:dealer] += card_value(players_cards[:dealer][1], total_cards_value, :dealer)
+    total_cards_value[:dealer] += single_card_value(players_cards[:dealer][1])
     loop do
       display_players_card(user_cards, dealer_cards, total_cards_value)
       prompt "Dealer current point is #{total_cards_value[:dealer]}."
@@ -243,8 +237,8 @@ loop do
       prompt "Dealer choose to #{dealer_move}!"
 
       if dealer_move == "hit"
-        managing_hit_move!(deck, players_cards, dealer_cards, :dealer)
-        sum_cards_value!(:dealer, total_cards_value, players_cards)
+        hit_move!(deck, players_cards, dealer_cards, :dealer)
+        total_cards_value!(:dealer, total_cards_value, players_cards)
       end
 
       prompt_to_continue("Press enter to continue the game")
@@ -254,19 +248,10 @@ loop do
     if dealer_move == "stay"
       puts compare_players_cards(total_cards_value)
     else
-      display_players_card(user_cards, dealer_cards, total_cards_value)
-      puts "Wow, the dealer burst! You won!"
+      prompt_burst("user", user_cards, dealer_cards, total_cards_value)
     end
   else
-    display_players_card(user_cards, dealer_cards, total_cards_value)
-    puts "Oh no, you burst! The dealer won!"
+    prompt_burst("dealer", user_cards, dealer_cards, total_cards_value)
   end
   break unless play_again?
 end
-
-
-
-
-
-
-
