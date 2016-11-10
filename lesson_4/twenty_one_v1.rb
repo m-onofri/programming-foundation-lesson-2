@@ -248,8 +248,7 @@ def declare_winner(score)
   puts "=" * 34
   display_score(score)
   puts ""
-  score[:user] == 5
-  if
+  if score[:user] == 5
     puts "USER WON!".center(34)
   else
     puts "DEALER WON!".center(34)
