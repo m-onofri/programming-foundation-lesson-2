@@ -28,7 +28,7 @@ def play_again?
   end
 end
 
-def burst?(sum_cards, player)
+def bust?(sum_cards, player)
   sum_cards[player] > TARGET_SCORE
 end
 
@@ -73,7 +73,7 @@ end
 
 # formatting and displaying cards on screen
 
-def formatting_card_details!(card_details)
+def format_card_details!(card_details)
   card_details.each do |val|
     case val
     when "2".."9" then card_details[1] = " #{val} "
@@ -95,11 +95,11 @@ def add_formatted_card!(format_cards, new_card)
   end
 end
 
-def formatting_two_cards(players_cards, player)
+def format_two_cards(players_cards, player)
   player_cards = players_cards[player]
 
-  card_1_details = formatting_card_details!(player_cards[0])
-  card_2_details = formatting_card_details!(player_cards[1])
+  card_1_details = format_card_details!(player_cards[0])
+  card_2_details = format_card_details!(player_cards[1])
 
   cards = formatting_single_card(card_1_details[0], card_1_details[1])
   new_card = formatting_single_card(card_2_details[0], card_2_details[1])
@@ -108,10 +108,10 @@ def formatting_two_cards(players_cards, player)
   cards
 end
 
-def formatting_one_card(players_cards, player)
+def format_one_card(players_cards, player)
   player_cards = players_cards[player]
 
-  card_1_details = formatting_card_details!(player_cards[0])
+  card_1_details = format_card_details!(player_cards[0])
 
   cards = formatting_single_card(card_1_details[0], card_1_details[1])
   hidden_card = ["   --------- ", "  |         |"] +
@@ -124,7 +124,7 @@ end
 
 def new_formatted_card!(player, cards_format, players_cards)
   new_card = players_cards[player].last
-  new_card_details = formatting_card_details!(new_card)
+  new_card_details = format_card_details!(new_card)
 
   last_card = formatting_single_card(new_card_details[0], new_card_details[1])
   add_formatted_card!(cards_format, last_card)
@@ -162,15 +162,15 @@ def initialize_game!(deck, game_vars)
   sum_cards = game_vars[:sum_cards]
 
   2.times do
-    dealing_card!(:user, deck, players_cards)
-    dealing_card!(:dealer, deck, players_cards)
+    deal_card!(:user, deck, players_cards)
+    deal_card!(:dealer, deck, players_cards)
   end
 
   total_cards_value!(:user, sum_cards, players_cards)
   sum_cards[:dealer] = single_card_value(players_cards[:dealer][0])
 
-  format_cards[:user] = formatting_two_cards(players_cards, :user)
-  format_cards[:dealer] = formatting_one_card(players_cards, :dealer)
+  format_cards[:user] = format_two_cards(players_cards, :user)
+  format_cards[:dealer] = format_one_card(players_cards, :dealer)
 end
 
 def initialize_dealer_turn!(game_vars)
@@ -178,7 +178,7 @@ def initialize_dealer_turn!(game_vars)
   sum_cards = game_vars[:sum_cards]
   players_cards = game_vars[:players_cards]
 
-  format_cards[:dealer] = formatting_two_cards(players_cards, :dealer)
+  format_cards[:dealer] = format_two_cards(players_cards, :dealer)
   sum_cards[:dealer] += single_card_value(players_cards[:dealer][1])
 end
 
@@ -197,24 +197,24 @@ def select_player_move(player, sum_cards)
   end
 end
 
-def dealing_card!(player, deck, players_cards)
+def deal_card!(player, deck, players_cards)
   current_suit = SUITS_SYMBOLS.sample
   current_value = deck[current_suit].sample
   players_cards[player] << [current_suit, current_value]
   deck[current_suit].delete(current_value)
 end
 
-def managing_player_hit(game_vars, player, deck)
+def manage_player_hit(game_vars, player, deck)
   format_cards = game_vars[:format_cards]
   sum_cards = game_vars[:sum_cards]
   players_cards = game_vars[:players_cards]
 
-  dealing_card!(player, deck, players_cards)
+  deal_card!(player, deck, players_cards)
   new_formatted_card!(player, format_cards[player], players_cards)
   total_cards_value!(player, sum_cards, players_cards)
 end
 
-def managing_player_moves(game_vars, player, deck, score)
+def manage_player_moves(game_vars, player, deck, score)
   loop do
     format_cards = game_vars[:format_cards]
     sum_cards = game_vars[:sum_cards]
@@ -224,10 +224,10 @@ def managing_player_moves(game_vars, player, deck, score)
     player_move = select_player_move(player, sum_cards)
     prompt "#{player.capitalize} will #{player_move}!"
 
-    managing_player_hit(game_vars, player, deck) if player_move == "hit"
+    manage_player_hit(game_vars, player, deck) if player_move == "hit"
 
     prompt_to_continue("Press enter to continue the game")
-    return player_move if stay?(player_move) || burst?(sum_cards, player)
+    return player_move if stay?(player_move) || bust?(sum_cards, player)
   end
 end
 
@@ -255,7 +255,7 @@ def declare_winner(score)
   end
 end
 
-def prompt_burst(winner, game_vars, score)
+def prompt_bust(winner, game_vars, score)
   format_cards = game_vars[:format_cards]
   sum_cards = game_vars[:sum_cards]
 
@@ -263,9 +263,9 @@ def prompt_burst(winner, game_vars, score)
   display_score(score)
   score[winner] += 1
   if winner == :user
-    puts "DEALER BURST! YOU WON!".center(34)
+    puts "DEALER BUST! YOU WON!".center(34)
   elsif winner == :dealer
-    puts "USER BURST! THE DEALER WON!".center(34)
+    puts "USER BUST! THE DEALER WON!".center(34)
   end
 end
 
@@ -273,14 +273,22 @@ clear_screen
 prompt <<-WELCOME
   Welcome to #{TARGET_SCORE}!
   Here the rules of the game:
+  - in the game you will use a card deck of 52 card with 4 suits (hearts,
+    diamonds, clubs, and spades), and 13 values (2, 3, 4, 5, 6, 7, 8, 9,
+    10, jack, queen, king, ace)
+  - the card with numbers from 2 to 10 are worth their face value
+  - the jack, queen, and king cards are each worth 10 points
+  - aces can be 1 or 11 points depending on the total value of the hand; if
+    the total value is lower 21, ace is 11 points, otherwise is 1 point.
   - both the player will receive two cards
   - you can see both of your cards, but only one of the other player's
     (called the dealer)
   - depending on cards, both players may choose to hit (receive another card)
     or stay
-  - The player who goes over #{TARGET_SCORE} bursts and lose the game
-  - When both players stay, the player whose hand is closest to #{TARGET_SCORE} wins
-  - The first to win 5 hands wins the game.
+  - the dealer must stay with 17 or more points
+  - the player who goes over #{TARGET_SCORE} busts and lose the game
+  - when both players stay, the player whose hand is closest to #{TARGET_SCORE} wins
+  - the first to win 5 hands wins the game.
 WELCOME
 
 prompt_to_continue("Press enter to start the game")
@@ -292,18 +300,18 @@ loop do
                   sum_cards: { user: 0, dealer: 0 },
                   format_cards: { user: [], dealer: [] } }
     initialize_game!(deck, game_vars)
-    user_move = managing_player_moves(game_vars, :user, deck, game_score)
+    user_move = manage_player_moves(game_vars, :user, deck, game_score)
     if user_move == "stay"
       initialize_dealer_turn!(game_vars)
-      dealer_move = managing_player_moves(game_vars, :dealer, deck, game_score)
+      dealer_move = manage_player_moves(game_vars, :dealer, deck, game_score)
       if dealer_move == "stay"
         update_score!(game_vars[:sum_cards], game_score)
         puts compare_players_cards(game_vars[:sum_cards])
       else
-        prompt_burst(:user, game_vars, game_score)
+        prompt_bust(:user, game_vars, game_score)
       end
     else
-      prompt_burst(:dealer, game_vars, game_score)
+      prompt_bust(:dealer, game_vars, game_score)
     end
     prompt_to_continue("Press enter to continue the game")
     break if game_score.values.include?(5)

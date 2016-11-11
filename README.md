@@ -1,1 +1,1 @@
-# programming-foundation-lesson-2
+# programming-foundation lessons 2, 3 and 4
